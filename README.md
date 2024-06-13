@@ -3,7 +3,7 @@
 ### Data Preperation:
     
     [ ] Download code
-    [ ] Processing and making COCO format datasets - single, flat directory per dataset (image file should contain no parents), make sure ids are unique (look into GLASS maybe)
+    [x] Processing and making COCO format datasets - single, flat directory per dataset (image file should contain no parents), make sure ids are unique (look into GLASS maybe)
     [ ] ignore label for dontcares (at first step, filter out all ignores from data)
     [ ] Datasets:
       [ ] ICDAR 2015
@@ -11,11 +11,12 @@
       [ ] ICDAR MLT - images with arabic/latin only
       [ ] Synth150k
       [ ] TextOCR
-      [ ] Asayar?
-      [ ] Arshab
-      [ ] DDI-100 - only original images
+      [ ] Asayar? - annotations are at line level and only contain traffic (e.g., no licence plate) - removed
+      [x] Arshab
+      [x] DDI-100 - original images + filtered backgrounds
       [ ] IDL (amazon textract) - not needed at first
     [ ] For all possible datasets (sizewize - create zip so the download will be easy)
+    [ ] Documentation 
 
 ### Azure:
 

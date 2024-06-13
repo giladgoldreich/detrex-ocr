@@ -1,18 +1,11 @@
 import sys
 sys.path.append('.')
 sys.path.append('..')
-import hashlib
-from enum import Enum, auto
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import ClassVar, Iterable, Tuple, List, Dict, Optional, Any
-import abc
-from tqdm import tqdm
-import warnings
+from typing import ClassVar, Tuple, List, Dict, Optional, Any
 import numpy as np
-import json
 from PIL import Image
-from collections import defaultdict
 import pyrallis
 import pandas as pd
 import ast
@@ -31,7 +24,7 @@ class ArshabMakingConfig(DatasetMakingConfig):
         "contributor": "Arshab",
         "date_created": "2021/11/24"
     })
-    
+    test_run: bool = False
 
 @dataclass
 class ArshabCocoMaker(CocoDatasetMaker):
@@ -44,11 +37,11 @@ class ArshabCocoMaker(CocoDatasetMaker):
     def get_number_of_images(self) -> int:
         return len(self.all_labels_xlsx_files)
     
-    def __getitem__(self, idx: int) -> Tuple[Image.Image, XYWH_BOXES, Path, str, List[bool], Optional[List[str]]]:
+    def __getitem__(self, idx: int) -> Tuple[Image.Image, XYWH_BOXES, str, str, List[bool], Optional[List[str]]]:
         cur_xl_file = self.all_labels_xlsx_files[idx]
         page_num = cur_xl_file.stem.split('_')[-1]
         im_path = self.config.dataset_root / f'{page_num}/page_{page_num}.png'
-        im = Image.open(im_path)
+        im = Image.open(im_path).convert('RGB')
         annot_df = pd.read_excel(cur_xl_file)
         words = annot_df['word'].tolist()
         x1_arr = annot_df['point1'].apply(ast.literal_eval).apply(lambda xy: xy[0]).values.astype(float)
@@ -58,8 +51,9 @@ class ArshabCocoMaker(CocoDatasetMaker):
         w_arr = x2_arr - x1_arr
         h_arr = y2_arr - y1_arr
         xywh_boxes = np.stack([x1_arr, y1_arr, w_arr, h_arr], axis=-1)
+        save_name = im_path.name # inidcative name
         
-        return im, xywh_boxes, im_path, 'train', [False] * len(xywh_boxes), words
+        return im, xywh_boxes, save_name, 'train', [False] * len(xywh_boxes), words
     
     
 
