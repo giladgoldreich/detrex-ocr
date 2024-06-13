@@ -1,3 +1,81 @@
+## ToDo
+
+### Data Preperation:
+    
+    [ ] Download code
+    [ ] Processing and making COCO format datasets - single, flat directory per dataset (image file should contain no parents), make sure ids are unique (look into GLASS maybe)
+    [ ] ignore label for dontcares (at first step, filter out all ignores from data)
+    [ ] Datasets:
+      [ ] ICDAR 2015
+      [ ] ICDAR 2013
+      [ ] ICDAR MLT - images with arabic/latin only
+      [ ] Synth150k
+      [ ] TextOCR
+      [ ] Asayar?
+      [ ] Arshab
+      [ ] DDI-100 - only original images
+      [ ] IDL (amazon textract) - not needed at first
+    [ ] For all possible datasets (sizewize - create zip so the download will be easy)
+
+### Azure:
+
+    [ ] How to connect remotely
+    [ ] NFS structure
+    [ ] How to move files if needed be
+    [ ] Conda environment - python version, torch+torchvision, numpy, pandas, opencv, Pillow (match to NH) 
+    [X] A100 training environment: https://learn.microsoft.com/en-us/azure/virtual-machines/nda100-v4-series
+    [ ] A100 debug environment
+
+
+### First DINO Training:
+
+    [ ] How to run
+    [ ] Controlling number of queries, dn_queries, image size, evaluation topk, etc.
+    [ ] Adding pretrains for backbones
+    [ ] Checking GPU utilization for 4000 queries and large image size (e.g., 1920)
+      [ ] Is mixed precision helpful?
+      [ ] What is the difference between resnet and swin?
+    [ ] Controlling train datasets:
+        [ ] Registrations
+        [ ] Weighted Sampling
+    [ ] Controlling test datasets:
+        [ ] Registrations
+        [ ] Metrics Per Dataset (base code concatenates all datasets into one)
+        [ ] Visualizations in test (can be done in evaluator or during `do_test` on main process)
+    [ ] Deployment settings: creating a predictor which will work in arbitrary batch sizes
+    [ ] See if nms is needed
+
+
+### Advanced Trainings:
+    [ ] Adding Vortex Metrics
+    [ ] Loading pretrains and FT
+    [ ] Adding NH data
+    [ ] Handling ignore labels (probably in `DETR_MAPPER`):
+      [ ] First leg:
+        [ ] Making image black/blurred there (handle dontcare inside of gts and such)
+        [ ] Try to determine if after augmentations some boxes became dontcares
+      [ ] Second leg:
+        [ ] Propagate ignore instances into dictionary
+        [ ] Add to visualizations
+        [ ] Handling ignore labels in Evaluator
+    [ ] Playing with backbones, learning rates and maybe augmentations
+    [ ] V100 v.s. A100
+    [ ] Can we move to onyx?
+
+### Wrapping up
+    [ ] Final training recepies
+    [ ] Documentation & guides
+    [ ] Optional - moving all differences between this repo and the original repo into a new repo, and using the base detrex repo as a package
+
+***********
+
+
+
+
+
+
+
+
 <div align="center">
   <img src="./assets/logo_2.png" width="30%">
 </div>
