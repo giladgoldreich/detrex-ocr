@@ -11,7 +11,7 @@ import pandas as pd
 import ast
 
 
-from datasets.dataset_maker import DatasetMakingConfig, CocoDatasetMaker, XYWH_BOXES
+from datasets.dataset_maker import DatasetMakingConfig, CocoDatasetMaker, ImageWithAnnots
 
 @dataclass
 class ArshabMakingConfig(DatasetMakingConfig):
@@ -37,7 +37,7 @@ class ArshabCocoMaker(CocoDatasetMaker):
     def get_number_of_images(self) -> int:
         return len(self.all_labels_xlsx_files)
     
-    def __getitem__(self, idx: int) -> Tuple[Image.Image, XYWH_BOXES, str, str, List[bool], Optional[List[str]]]:
+    def __getitem__(self, idx: int) -> Optional[ImageWithAnnots]:
         cur_xl_file = self.all_labels_xlsx_files[idx]
         page_num = cur_xl_file.stem.split('_')[-1]
         im_path = self.config.dataset_root / f'{page_num}/page_{page_num}.png'
@@ -51,9 +51,14 @@ class ArshabCocoMaker(CocoDatasetMaker):
         w_arr = x2_arr - x1_arr
         h_arr = y2_arr - y1_arr
         xywh_boxes = np.stack([x1_arr, y1_arr, w_arr, h_arr], axis=-1)
-        save_name = im_path.name # inidcative name
-        
-        return im, xywh_boxes, save_name, 'train', [False] * len(xywh_boxes), words
+        save_name = im_path.name        
+        return ImageWithAnnots(im=im,
+                               xywh_boxes=xywh_boxes,
+                               ignore_mask=[False] * len(xywh_boxes),
+                               subset='train',
+                               original_img_path=im_path,
+                               save_name=im_path.name,
+                               texts=words)
     
     
 

@@ -10,9 +10,8 @@ from PIL import Image, ImageOps
 import pyrallis
 import pickle
 from sklearn.model_selection import train_test_split
-import cv2
 
-from datasets.dataset_maker import DatasetMakingConfig, CocoDatasetMaker, XYWH_BOXES
+from datasets.dataset_maker import DatasetMakingConfig, CocoDatasetMaker, ImageWithAnnots
 
 @dataclass
 class DDI100CocoMakingConfig(DatasetMakingConfig):
@@ -31,6 +30,7 @@ class DDI100CocoMakingConfig(DatasetMakingConfig):
     blend_if_background_not_exists: bool = False
     random_state: int = 42
     only_imgs_with_background: bool = True
+    test_run: bool = False
     
 
 @dataclass
@@ -72,7 +72,7 @@ class DDI100CocoMaker(CocoDatasetMaker):
         real_rgb_im = Image.fromarray(np.array(fake_rgb_im)[:, :, ::-1])
         return real_rgb_im
     
-    def __getitem__(self, idx: int) -> Tuple[Image.Image, XYWH_BOXES, str, str, List[bool], Optional[List[str]]]:
+    def __getitem__(self, idx: int) -> Optional[ImageWithAnnots]:
         cur_pkl_file = self.all_origin_pkl_files[idx]        
         
         origin_im_file = self.extract_origin_img_file_from_pkl_file(cur_pkl_file)
@@ -109,9 +109,12 @@ class DDI100CocoMaker(CocoDatasetMaker):
         else:
             final_im = origin_im
             
-        file_name = f'{file_name}.png'
-        return final_im, xywh_bboxes, file_name, 'train' if self.train_mask[idx] else 'test', ignores, texts
-    
+        return ImageWithAnnots(im=final_im,
+                               xywh_boxes=xywh_bboxes,
+                               ignore_mask=[False] * len(xywh_bboxes),
+                               save_name=f'{file_name}.png',
+                               subset='train' if self.train_mask[idx] else 'test',
+                               )    
     
 
 def run(cfg: DDI100CocoMakingConfig):

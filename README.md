@@ -7,13 +7,18 @@
     [ ] ignore label for dontcares (at first step, filter out all ignores from data)
     [ ] Datasets:
       [ ] ICDAR 2015
-      [ ] ICDAR 2013
-      [ ] ICDAR MLT - images with arabic/latin only
-      [ ] Synth150k
+      [ ] ICDAR 2017 MLT - images with arabic/latin only
+      [ ] ICDAR 2019 MLT - images with arabic/latin only
+      [ ] Synth150k - too curved
       [ ] TextOCR
       [ ] Asayar? - annotations are at line level and only contain traffic (e.g., no licence plate) - removed
+      [X] Hiertext with angle filtering
       [x] Arshab
       [x] DDI-100 - original images + filtered backgrounds
+        [ ] Add blacklist images to config
+        [ ] Maybe use gen_images and not origin_images, however make sure that:
+          [ ] train test split is done in group mode - augmented versions of the image should be in the same group
+          [ ] stamps usually contain texts - need to blur them
       [ ] IDL (amazon textract) - not needed at first
     [ ] For all possible datasets (sizewize - create zip so the download will be easy)
     [ ] Documentation 
