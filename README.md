@@ -4,15 +4,15 @@
     
     [ ] Download code
     [x] Processing and making COCO format datasets - single, flat directory per dataset (image file should contain no parents), make sure ids are unique (look into GLASS maybe)
-    [ ] ignore label for dontcares (at first step, filter out all ignores from data)
+    [x] ignore label for dontcares (at first step, filter out all ignores from data)
     [ ] Datasets:
-      [ ] ICDAR 2015
-      [ ] ICDAR 2017 MLT - images with arabic/latin only
-      [ ] ICDAR 2019 MLT - images with arabic/latin only
+      [x] ICDAR 2015
+      [x] ICDAR 2017 MLT - images with arabic/latin only
+      [x] ICDAR 2019 MLT - images with arabic/latin only
       [ ] Synth150k - too curved
-      [ ] TextOCR
-      [ ] Asayar? - annotations are at line level and only contain traffic (e.g., no licence plate) - removed
-      [X] Hiertext with angle filtering
+      [x] TextOCR - wouldn't use it though, I don't like the annots there
+      [ ] Asayar - annotations are at line level and only contain traffic (e.g., no licence plate) - removed
+      [x] Hiertext with angle filtering
       [x] Arshab
       [x] DDI-100 - original images + filtered backgrounds
         [ ] Add blacklist images to config
