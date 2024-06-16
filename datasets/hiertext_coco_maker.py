@@ -34,7 +34,7 @@ class HierTextCocoMakingConfig(DatasetMakingConfig):
         "date_created": "2022/06/03"
     })
     test_run: bool = False
-    max_angle: int = 10
+    max_angle: int = 20
     angle_policy: HardAnnotPolicy = HardAnnotPolicy.MARK_IGNORE
     handwriting_policy: HardAnnotPolicy = HardAnnotPolicy.KEEP
     legible_policy: HardAnnotPolicy = HardAnnotPolicy.MARK_IGNORE
