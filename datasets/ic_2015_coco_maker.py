@@ -19,7 +19,7 @@ from datasets.dataset_maker import DatasetMakingConfig, CocoDatasetMaker, ImageW
 
 @dataclass
 class IC15CocoMakingConfig(DatasetMakingConfig):
-    dataset_name: ClassVar[str] = 'ic_15_full'
+    dataset_name: ClassVar[str] = 'ic15_full'
     dataset_root: Path =Path('/Users/giladgoldreich/Downloads/ICDAR2015')
     metadata: Dict[str, Any] = field(default_factory=lambda: {
         "url": "https://rrc.cvc.uab.es/?ch=4&com=introduction",
@@ -29,8 +29,7 @@ class IC15CocoMakingConfig(DatasetMakingConfig):
         "date_created": "2015/01/01"
     })
     test_run: bool = False
-    ignore_policy: IgnorePolicies = IgnorePolicies.KEEP
-    
+    ignore_policy: IgnorePolicies = IgnorePolicies.KEEP    
 
 @dataclass
 class IC15CocoMaker(CocoDatasetMaker):
@@ -61,7 +60,7 @@ class IC15CocoMaker(CocoDatasetMaker):
         im_path = self.image_paths[idx]
         gt_path = self.gt_paths[idx]
         save_name = f'{im_path.parent.name}_{im_path.name}'
-        xywh_bboxes = []
+        all_xy_coords = []
         words = []
         ignores = []
         with open(gt_path, 'r') as f:
@@ -73,16 +72,12 @@ class IC15CocoMaker(CocoDatasetMaker):
                 print(ann)
                 continue
             cur_xyxy = list(map(int, split_by_comma[:8]))
-            cur_xmin = min(cur_xyxy[::2])
-            cur_ymin = min(cur_xyxy[1::2])
-            cur_xmax = max(cur_xyxy[::2])
-            cur_ymax = max(cur_xyxy[1::2])
+            all_xy_coords.append(np.array(cur_xyxy).reshape(4, 2))
             cur_text = split_by_comma[8]
             if cur_text == '' or cur_text == "###":
                 cur_ignore = True
             else:
                 cur_ignore = False
-            xywh_bboxes.append([cur_xmin, cur_ymin, cur_xmax-cur_xmin, cur_ymax-cur_ymin])
             words.append(cur_text)
             ignores.append(cur_ignore)
 
@@ -90,7 +85,7 @@ class IC15CocoMaker(CocoDatasetMaker):
         
         return ImageWithAnnots(
             im=im,
-            xywh_boxes=np.array(xywh_bboxes).astype(float),
+            xy_coords=all_xy_coords,
             ignore_mask=ignores,
             subset=self.subsets[idx],
             save_name=save_name,

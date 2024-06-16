@@ -2,7 +2,7 @@ import hashlib
 from enum import Enum, auto
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import ClassVar, Iterable, Tuple, List, Dict, Optional, Any, NamedTuple
+from typing import ClassVar, Iterable, Tuple, List, Dict, Optional, Any, NamedTuple, Container
 import abc
 from tqdm import tqdm
 import warnings
@@ -13,10 +13,11 @@ from collections import defaultdict
 import pyrallis
 from tqdm.contrib.concurrent import thread_map
 import shutil
+import cv2
 
 class ImageWithAnnots(NamedTuple):
     im: Image.Image
-    xywh_boxes: Iterable[Tuple[float, float, float, float]]
+    xy_coords: Container[Container[Tuple[float, float]]]
     ignore_mask: List[bool]
     subset: str
     save_name: Optional[str] = None
@@ -24,6 +25,10 @@ class ImageWithAnnots(NamedTuple):
     texts: Optional[List[str]] = None
     img_id: Optional[int] = None
     annot_ids: Optional[List[int]] = None
+    
+    @property
+    def num_annots(self) -> int:
+        return len(self.xy_coords)
 
 class IgnorePolicies(Enum):
     KEEP = auto()
@@ -81,8 +86,8 @@ class CocoDatasetMaker(abc.ABC):
 
         num_images = self.get_number_of_images()
         if self.config.test_run:
-            warnings.warn('Running in test run mode - only 10 images')
             num_images = min(num_images, 10)
+            warnings.warn(f'Running in test run mode - only {num_images} images')
 
         subset_to_image_dicts = defaultdict(list)
         subset_to_annot_dicts = defaultdict(list)
@@ -142,9 +147,15 @@ class CocoDatasetMaker(abc.ABC):
                 "annotations": subset_to_annot_dicts[subset],
                 "categories": [self.text_category]
             }
+            
+            print(f"Num images in {subset}: {len(coco_dict['images'])}")
+            print(f"Num annots in {subset}: {len(coco_dict['annotations'])}")
+
+            
             with open(self.config.destination / f'{self.config.dataset_name}_{subset}.json', 'w', encoding='utf-8') as f:
                 json.dump(coco_dict, f, ensure_ascii=False)
-
+            
+            
     @abc.abstractmethod
     def get_number_of_images(self) -> int:
         raise NotImplementedError()
@@ -168,7 +179,7 @@ class CocoDatasetMaker(abc.ABC):
         if img_with_annots.annot_ids is not None:
             annot_ids = np.array(img_with_annots.annot_ids)
         else:
-            annot_ids = np.array([int(hashlib.md5(f'{img_id}_{j}'.encode()).hexdigest()[:12], 16) for j in range(len(img_with_annots.xywh_boxes))])
+            annot_ids = np.array([int(hashlib.md5(f'{img_id}_{j}'.encode()).hexdigest()[:12], 16) for j in range(img_with_annots.num_annots)])
         
         if img_with_annots.save_name is not None:
             save_name = img_with_annots.save_name
@@ -186,11 +197,8 @@ class CocoDatasetMaker(abc.ABC):
             "file_name": save_name,
             "date_captured": "2024-06-10 10:00:00"
         }
-            
-            
-        xywh_boxes = img_with_annots.xywh_boxes
         
-        if len(xywh_boxes) == 0:
+        if img_with_annots.num_annots == 0:
             warnings.warn(f"Skipping {save_name} since it has no annotations")
             return None, {}, []
 
@@ -211,14 +219,14 @@ class CocoDatasetMaker(abc.ABC):
                         raise ValueError(f"Unsupported space policy {self.config.space_policy}")
 
         if self.config.ignore_policy == IgnorePolicies.KEEP:
-            relevant_indexes = list(range(len(xywh_boxes)))
+            relevant_indexes = list(range(img_with_annots.num_annots))
 
         elif self.config.ignore_policy == IgnorePolicies.REMOVE_ANNOT:
             relevant_indexes = [j for j, should_ignore in enumerate(ignore_mask) if not should_ignore]
 
         elif self.config.ignore_policy == IgnorePolicies.SKIP_IMAGE:
             relevant_indexes = [j for j, should_ignore in enumerate(ignore_mask) if not should_ignore]
-            if len(xywh_boxes) > 0 and any(ignore_mask):
+            if img_with_annots.num_annots > 0 and any(ignore_mask):
                 warnings.warn(f"Skipping {save_name} since it has ignore annotations")
                 return None, {}, []
 
@@ -230,7 +238,9 @@ class CocoDatasetMaker(abc.ABC):
             return None, {}, []
 
         relevant_indexes = np.array(relevant_indexes).astype(int)
-        xywh_boxes = np.array(xywh_boxes)[relevant_indexes]
+        relevant_indexes_set = set(relevant_indexes)
+        xy_coords = [xy for j, xy in enumerate(img_with_annots.xy_coords) if j in relevant_indexes_set]
+        xywh_boxes = self.xy_coords_to_xywh_boxes(xy_coords)
         ignore_mask = np.array(ignore_mask)[relevant_indexes].astype(bool).astype(int)
         texts = np.array(texts)[relevant_indexes] if texts is not None else None
         annot_ids = np.array(annot_ids)[relevant_indexes]
@@ -244,6 +254,9 @@ class CocoDatasetMaker(abc.ABC):
                 "image_id": img_id,
                 "area": float(areas[j]),
                 "bbox": list(map(float, xywh_boxes[j])),
+                "segmentation": [
+                    list(map(float, np.array(xy_coords[j]).flatten().astype(float)))
+                ],
                 "ignore": int(bool(ignore_mask[j]))
             }
 
@@ -276,3 +289,31 @@ class CocoDatasetMaker(abc.ABC):
             im_with_bboxes.save(Path(bboxes_save_dir / save_name).with_suffix('.jpg'))            
 
         return img_with_annots.subset, cur_img_dict, cur_img_annots
+
+    @staticmethod
+    def xy_coords_to_xywh_boxes(xy_coords: Container[Container[Tuple[float, float]]]) -> Container[Tuple[float, float, float, float]]:
+        if len(xy_coords) == 0:
+            return np.zeros((0, 4), dtype=float)
+        xywh_boxes = []
+        for cur_xyxy in xy_coords:
+            cur_xyxy_arr = np.array(cur_xyxy).astype(float).reshape(-1, 2)
+            xywh_boxes.append([
+                cur_xyxy[:, 0].min(),
+                cur_xyxy[:, 1].min(),
+                cur_xyxy[:, 0].max() - cur_xyxy[:, 0].min(),
+                cur_xyxy[:, 1].max() - cur_xyxy[:, 1].min(),
+            ])
+        xywh_boxes = np.array(xywh_boxes).astype(float)
+        return xywh_boxes
+    
+    @staticmethod
+    def xy_coords_to_cxcywha_boxes(xy_coords: Container[Container[Tuple[float, float]]]) -> Container[Tuple[float, float, float, float, float]]:
+        if len(xy_coords) == 0:
+            return np.zeros((0, 5), dtype=float)
+        cxcywha_boxes = [cv2.minAreaRect(np.array(xyxy).reshape(-1, 2).astype(int)) for xyxy in xy_coords]
+        cx = np.array([t[0][0] for t in cxcywha_boxes])
+        cy = np.array([t[0][1] for t in cxcywha_boxes])
+        w = np.array([t[1][0] for t in cxcywha_boxes])
+        h = np.array([t[1][1] for t in cxcywha_boxes])
+        alpha = np.array([t[2] for t in cxcywha_boxes])
+        return np.stack([cx, cy, w, h, alpha], axis=-1).astype(float)

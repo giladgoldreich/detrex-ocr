@@ -73,9 +73,9 @@ class TextOCRCocoMaker(CocoDatasetMaker):
         ignore_mask = np.zeros(len(xywh_boxes), dtype=bool)
         keep_mask = np.ones(len(xywh_boxes), dtype=bool)
         
-        points = [np.array(d['points']).reshape(-1, 2) for d in ann_dicts]
-        cxcywha_boxes = [cv2.minAreaRect(xyxy.astype(int)) for xyxy in points]
-        alpha = np.array([t[2] for t in cxcywha_boxes]).astype(float)
+        xy_coords = [np.array(d['points']).reshape(-1, 2) for d in ann_dicts]
+        cxcywha_boxes = self.xy_coords_to_cxcywha_boxes(xy_coords)
+        alpha = cxcywha_boxes[:, 4]
         too_high_angle_mask = (np.abs(alpha) >= self.config.max_angle) & (np.abs(alpha) <= 90 - self.config.max_angle)
         
         if self.config.high_angle_policy == HardAnnotPolicy.KEEP:
@@ -89,7 +89,7 @@ class TextOCRCocoMaker(CocoDatasetMaker):
         
         return ImageWithAnnots(
             im=im,
-            xywh_boxes=xywh_boxes[keep_mask],
+            xy_coords=xy_coords,
             ignore_mask=ignore_mask[keep_mask],
             subset=subset,
             save_name=save_name,

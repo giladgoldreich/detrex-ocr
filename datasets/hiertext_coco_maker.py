@@ -77,28 +77,13 @@ class HierTextCocoMaker(CocoDatasetMaker):
                 word_annots.extend(line_annot['words'])
         
         texts = np.array([d['text'] for d in word_annots])
-        all_xyxy_coords = [np.array(d['vertices']).astype(float) for d in word_annots]
+        all_xyxy_coords = [np.array(d['vertices']).reshape(-1, 2).astype(float) for d in word_annots]
         is_legibles = np.array([d['legible'] for d in word_annots]).astype(bool)
         is_handwritten = np.array([d['vertical'] for d in word_annots]).astype(bool)
-        cxcywha_boxes = [cv2.minAreaRect(xyxy.astype(int)) for xyxy in all_xyxy_coords]
-        cx = np.array([t[0][0] for t in cxcywha_boxes]).astype(float)
-        cy = np.array([t[0][1] for t in cxcywha_boxes]).astype(float)
-        w = np.array([t[1][0] for t in cxcywha_boxes]).astype(float)
-        h = np.array([t[1][1] for t in cxcywha_boxes]).astype(float)
-        alpha = np.array([t[2] for t in cxcywha_boxes]).astype(float)
+        cxcywha_boxes = self.xy_coords_to_cxcywha_boxes(all_xyxy_coords)
+        alpha = cxcywha_boxes[:, 4]
         too_high_angle_mask = (np.abs(alpha) >= self.config.max_angle) & (np.abs(alpha) <= 90 - self.config.max_angle)
-        
-        
-        cos_a = np.abs(np.cos(alpha * np.pi / 180.))
-        sin_a = np.abs(np.sin(alpha * np.pi / 180.))
-        
-        new_w = cos_a * w + sin_a * h
-        new_h = cos_a * h + sin_a * w
-        xmin = cx - new_w / 2
-        ymin = cy - new_h / 2
-        
-        xywh_bboxes = np.stack([xmin, ymin, new_w, new_h], axis=-1)
-        
+                        
         ignore_mask = np.zeros(len(texts), dtype=bool)
         keep_mask = np.ones(len(texts), dtype=bool)
         for msk, policy in zip([too_high_angle_mask, ~is_legibles, is_handwritten],
@@ -112,13 +97,12 @@ class HierTextCocoMaker(CocoDatasetMaker):
             else: 
                 raise ValueError(policy)
         
-
-        xywh_bboxes = xywh_bboxes[keep_mask]
+        all_xyxy_coords = [xyxy for j, xyxy in enumerate(all_xyxy_coords) if keep_mask[j]]
         ignore_mask = ignore_mask[keep_mask]
         texts = texts[keep_mask]
         return ImageWithAnnots(im=im,
                                img_id=image_id, 
-                               xywh_boxes=xywh_bboxes,
+                               xy_coords=all_xyxy_coords,
                                ignore_mask=ignore_mask,
                                subset=subset,
                                save_name=im_path.name,

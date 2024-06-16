@@ -24,7 +24,7 @@ class OtherLangugePolicy(Enum):
 
 @dataclass
 class IC17MLTCocoMakingConfig(DatasetMakingConfig):
-    dataset_name: ClassVar[str] = 'ic7mlt_full'
+    dataset_name: ClassVar[str] = 'ic17mlt_full'
     dataset_root: Path =Path('/Users/giladgoldreich/Downloads/ICDAR2017_mlt')
     metadata: Dict[str, Any] = field(default_factory=lambda: {
         "url": "https://rrc.cvc.uab.es/?ch=4&com=introduction",
@@ -43,8 +43,7 @@ class IC17MLTCocoMakingConfig(DatasetMakingConfig):
         })
     gt_file_prefix: Optional[str] = 'gt'
     skip_image_without_lang_annots: bool = True
-    ignore_policy: IgnorePolicies = IgnorePolicies.KEEP
-    
+    ignore_policy: IgnorePolicies = IgnorePolicies.KEEP    
 
 @dataclass
 class IC17MLTCocoMaker(CocoDatasetMaker):
@@ -79,6 +78,7 @@ class IC17MLTCocoMaker(CocoDatasetMaker):
         im_path = self.image_paths[idx]
         gt_path = self.gt_paths[idx]
         save_name = f'{im_path.parent.name}_{im_path.name}'
+        all_xyxy_coords = []
         xywh_bboxes = []
         words = []
         ignores = []
@@ -94,10 +94,7 @@ class IC17MLTCocoMaker(CocoDatasetMaker):
                 print(ann)
                 continue
             cur_xyxy = list(map(int, split_by_comma[:8]))
-            cur_xmin = min(cur_xyxy[::2])
-            cur_ymin = min(cur_xyxy[1::2])
-            cur_xmax = max(cur_xyxy[::2])
-            cur_ymax = max(cur_xyxy[1::2])
+            all_xyxy_coords.append(np.array(cur_xyxy).astype(float).reshape(-1, 2))
             
             cur_lang = split_by_comma[8]
             cur_text = split_by_comma[9]
@@ -121,7 +118,6 @@ class IC17MLTCocoMaker(CocoDatasetMaker):
             elif cur_lang in self.config.languages:
                 num_annots_in_lang += 1
             
-            xywh_bboxes.append([cur_xmin, cur_ymin, cur_xmax-cur_xmin, cur_ymax-cur_ymin])
             words.append(cur_text)
             ignores.append(cur_ignore)
             
@@ -132,12 +128,12 @@ class IC17MLTCocoMaker(CocoDatasetMaker):
         
         return ImageWithAnnots(
             im=im,
-            xywh_boxes=np.array(xywh_bboxes).astype(float),
+            xy_coords=np.array(all_xyxy_coords).astype(float),
             ignore_mask=ignores,
             subset=self.subsets[idx],
             save_name=save_name,
             original_img_path=im_path,
-            texts=words
+            texts=words,
         )
         
 
