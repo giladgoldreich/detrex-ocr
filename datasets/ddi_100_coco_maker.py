@@ -30,7 +30,7 @@ class DDI100CocoMakingConfig(DatasetMakingConfig):
     random_state: int = 42
     only_imgs_with_background: bool = True
     test_run: bool = False
-    blend_ratios: List[int] = field(default_factory=lambda: [60, 80])
+    blend_ratios: List[int] = field(default_factory=lambda: [60])
     
 
 @dataclass

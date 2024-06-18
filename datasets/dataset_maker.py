@@ -47,7 +47,7 @@ class DatasetMakingConfig:
     dataset_name: ClassVar[str]
 
     dataset_root: Path
-    destination: Path = Path('./datasets')
+    destination: Path = Path('./datasets/processed')
     exists_ok: bool = True
     skip_image_without_gt_annots: bool = True
     add_dataset_name_to_destination: bool = True
