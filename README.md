@@ -25,25 +25,25 @@
 
 ### Azure:
 
-    [ ] How to connect remotely
-    [ ] NFS structure
-    [ ] How to move files if needed be
-    [ ] Conda environment - python version, torch+torchvision, numpy, pandas, opencv, Pillow (match to NH) 
-    [X] A100 training environment: https://learn.microsoft.com/en-us/azure/virtual-machines/nda100-v4-series
+    [x] How to connect remotely
+    [x] NFS structure
+    [x] How to move files if needed be
+    [x] Conda environment - python version, torch+torchvision, numpy, pandas, opencv, Pillow (match to NH) 
+    [ ] A100 training environment: https://learn.microsoft.com/en-us/azure/virtual-machines/nda100-v4-series
     [ ] A100 debug environment
 
 
 ### First DINO Training:
 
-    [ ] How to run
-    [ ] Controlling number of queries, dn_queries, image size, evaluation topk, etc.
+    [X] How to run
+    [X] Controlling number of queries, dn_queries, image size, evaluation topk, etc.
     [ ] Adding pretrains for backbones
-    [ ] Checking GPU utilization for 4000 queries and large image size (e.g., 1920)
-      [ ] Is mixed precision helpful?
-      [ ] What is the difference between resnet and swin?
-    [ ] Controlling train datasets:
-        [ ] Registrations
-        [ ] Weighted Sampling
+    [X] Checking GPU utilization for 4000 queries and large image size (e.g., 1920)
+      [X] Is mixed precision helpful?
+      [X] What is the difference between resnet and swin?
+    [X] Controlling train datasets:
+        [X] Registrations
+        [X] Weighted Sampling
     [ ] Controlling test datasets:
         [ ] Registrations
         [ ] Metrics Per Dataset (base code concatenates all datasets into one)
