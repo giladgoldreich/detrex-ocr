@@ -19,7 +19,7 @@ from datasets.ic_2017_mlt_coco_maker import IC17MLTCocoMaker, IC17MLTCocoMakingC
 @dataclass
 class IC19MLTCocoMakingConfig(IC17MLTCocoMakingConfig):
     dataset_name: ClassVar[str] = 'ic19mlt_clean'
-    dataset_root: Path =Path('/Users/giladgoldreich/Downloads/ICDAR2019_mlt')
+    dataset_root: Path =Path('/nfs/private/gilad/ocr_detection/data/raw/ICDAR2019_mlt')
     metadata: Dict[str, Any] = field(default_factory=lambda: {
         "url": "https://rrc.cvc.uab.es/?ch=15&com=introduction",
         "version": "1.0",

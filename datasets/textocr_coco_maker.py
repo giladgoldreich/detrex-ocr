@@ -24,7 +24,7 @@ class HardAnnotPolicy(Enum):
 @dataclass
 class TextOCRCocoMakingConfig(DatasetMakingConfig):
     dataset_name: ClassVar[str] = 'textocr'
-    dataset_root: Path =Path('/Users/giladgoldreich/Downloads/TextOCR')
+    dataset_root: Path =Path('/nfs/private/gilad/ocr_detection/data/raw/TextOCR')
     metadata: Dict[str, Any] = field(default_factory=lambda: {
         "url": "https://textvqa.org/textocr/dataset/",
         "version": "0.1",
@@ -35,7 +35,7 @@ class TextOCRCocoMakingConfig(DatasetMakingConfig):
     test_run: bool = False
     ignore_policy: IgnorePolicies = IgnorePolicies.SKIP_IMAGE
     max_angle: int = 15
-    high_angle_policy: HardAnnotPolicy = HardAnnotPolicy.MARK_IGNORE
+    high_angle_policy: HardAnnotPolicy = HardAnnotPolicy.KEEP
     
 
 @dataclass

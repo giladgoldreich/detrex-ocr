@@ -47,7 +47,7 @@ class DatasetMakingConfig:
     dataset_name: ClassVar[str]
 
     dataset_root: Path
-    destination: Path = Path('./datasets/processed')
+    destination: Path = Path('/nfs/private/gilad/ocr_detection/detrex-ocr/datasets')
     exists_ok: bool = True
     skip_image_without_gt_annots: bool = True
     add_dataset_name_to_destination: bool = True
@@ -63,6 +63,7 @@ class DatasetMakingConfig:
             self.destination = self.destination / self.dataset_name
             self.add_dataset_name_to_destination = False
         if self.test_run:
+            warnings.warn("setting `max_workers`=0 when in test run")
             self.max_workers = 0
 
 
@@ -250,7 +251,7 @@ class CocoDatasetMaker(abc.ABC):
             {
                 "id": int(annot_ids[j]),
                 "category_id": self.text_category['id'],
-                "iscrowd": 0,
+                "iscrowd": int(bool(ignore_mask[j])),
                 "image_id": img_id,
                 "area": float(areas[j]),
                 "bbox": list(map(float, xywh_boxes[j])),
@@ -276,14 +277,19 @@ class CocoDatasetMaker(abc.ABC):
             im.convert('RGB').save(img_full_save_path)
                     
         if self.config.draw:
-            im_with_bboxes = im.copy()
+            im_with_bboxes = im.copy().convert('RGB')
             draw = ImageDraw.Draw(im_with_bboxes)
             for ann in cur_img_annots:
-                draw.rectangle([ann['bbox'][0],
-                                ann['bbox'][1],
-                                ann['bbox'][0] + ann['bbox'][2],
-                                ann['bbox'][1] + ann['bbox'][3]],
-                                outline='red' if ann['ignore'] else 'green')
+                for poly in ann['segmentation']:
+                    draw.polygon(list(map(int, poly)),
+                                 outline='red' if ann['ignore'] else 'green')
+                    
+                # draw.rectangle([ann['bbox'][0],
+                #                     ann['bbox'][1],
+                #                     ann['bbox'][0] + ann['bbox'][2],
+                #                     ann['bbox'][1] + ann['bbox'][3]],
+                #                     outline='red' if ann['ignore'] else 'green')
+                    
             bboxes_save_dir = Path(str(img_save_dir) + '_marked')
             bboxes_save_dir.mkdir(exist_ok=True)
             im_with_bboxes.save(Path(bboxes_save_dir / save_name).with_suffix('.jpg'))            

@@ -1,0 +1,12 @@
+*__pycache__
+*vscode
+*detectron2*
+*output*
+*build
+*.egg-info
+*.pth
+*.so
+*.jpg
+*.png
+*.json
+*.yaml

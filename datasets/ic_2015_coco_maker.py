@@ -19,8 +19,8 @@ from datasets.dataset_maker import DatasetMakingConfig, CocoDatasetMaker, ImageW
 
 @dataclass
 class IC15CocoMakingConfig(DatasetMakingConfig):
-    dataset_name: ClassVar[str] = 'ic15_full'
-    dataset_root: Path =Path('/Users/giladgoldreich/Downloads/ICDAR2015')
+    dataset_name: ClassVar[str] = 'ic15_clean'
+    dataset_root: Path =Path('/nfs/private/gilad/ocr_detection/data/raw/ICDAR2015')
     metadata: Dict[str, Any] = field(default_factory=lambda: {
         "url": "https://rrc.cvc.uab.es/?ch=4&com=introduction",
         "version": "1.0",
@@ -29,7 +29,7 @@ class IC15CocoMakingConfig(DatasetMakingConfig):
         "date_created": "2015/01/01"
     })
     test_run: bool = False
-    ignore_policy: IgnorePolicies = IgnorePolicies.KEEP    
+    ignore_policy: IgnorePolicies = IgnorePolicies.SKIP_IMAGE    
 
 @dataclass
 class IC15CocoMaker(CocoDatasetMaker):

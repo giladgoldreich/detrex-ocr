@@ -25,7 +25,7 @@ class HardAnnotPolicy(Enum):
 @dataclass
 class HierTextCocoMakingConfig(DatasetMakingConfig):
     dataset_name: ClassVar[str] = 'Hiertext'
-    dataset_root: Path =Path('/Users/giladgoldreich/Downloads/hiertext')
+    dataset_root: Path =Path('/nfs/private/gilad/ocr_detection/data/raw/hiertext')
     metadata: Dict[str, Any] = field(default_factory=lambda: {
         "url": "https://github.com/google-research-datasets/hiertext",
         "version": "1.0",
@@ -35,7 +35,7 @@ class HierTextCocoMakingConfig(DatasetMakingConfig):
     })
     test_run: bool = False
     max_angle: int = 20
-    angle_policy: HardAnnotPolicy = HardAnnotPolicy.MARK_IGNORE
+    angle_policy: HardAnnotPolicy = HardAnnotPolicy.KEEP
     handwriting_policy: HardAnnotPolicy = HardAnnotPolicy.KEEP
     legible_policy: HardAnnotPolicy = HardAnnotPolicy.MARK_IGNORE
     
