@@ -47,7 +47,7 @@
     [ ] Controlling test datasets:
         [ ] Registrations
         [ ] Metrics Per Dataset (base code concatenates all datasets into one)
-        [ ] Visualizations in test (can be done in evaluator or during `do_test` on main process)
+        [X] Visualizations in test - done via `VisualizationEvaluator` (nice hack)
     [ ] Deployment settings: creating a predictor which will work in arbitrary batch sizes
     [ ] See if nms is needed
 
