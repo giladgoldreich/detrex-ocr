@@ -3,7 +3,14 @@ import os
 import logging
 
 PRETRAIN_NAME_TO_SPLITS = {
-    'DDI_100': ['train', 'test']
+    'DDI_100': ['train', 'test'],
+    'Arshab_7k': ['train'],
+    'Hiertext': ['train', 'validation'],
+    'ic15_clean': ['train', 'test'],
+    'ic17mlt_clean': ['train', 'val'],
+    'ic19mlt_clean': ['train'],
+    'textocr': ['train']
+    
 }
 
 

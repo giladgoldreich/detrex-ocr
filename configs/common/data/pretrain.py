@@ -4,22 +4,25 @@ import detectron2.data.transforms as T
 from detectron2.config import LazyCall as L
 from detectron2.data import (
     build_detection_test_loader,
-    build_detection_train_loader,
     get_detection_dataset_dicts,
 )
 from detectron2.evaluation import COCOEvaluator
-from detrex.data import DetrDatasetMapper
+from detrex.data import DetrDatasetMapper, get_dataset_dicts_and_sampler, build_weighted_detection_train_loader
 from detrex.data.datasets.register_ocr_pretrain import register_pretrain
 
 _root = os.getenv("DETECTRON2_DATASETS",
-                  "/nfs/private/gilad/ocr_detection/datasets/")
+                  "./datasets/")
 register_pretrain(_root)
 
 
 dataloader = OmegaConf.create()
 
-dataloader.train = L(build_detection_train_loader)(
-    dataset=L(get_detection_dataset_dicts)(names="DDI_100_train"),
+
+dataloader.train = L(build_weighted_detection_train_loader)(
+    dataset=L(get_dataset_dicts_and_sampler)(
+        names=["DDI_100_train", "Hiertext_train"],
+        weights=[0.3, 0.7]
+    ),
     mapper=L(DetrDatasetMapper)(
         augmentation=[
             L(T.RandomFlip)(),
