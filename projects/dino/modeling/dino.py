@@ -76,6 +76,7 @@ class DINO(nn.Module):
         box_noise_scale: float = 1.0,
         input_format: Optional[str] = "RGB",
         vis_period: int = 0,
+        vis_thresh: float = 0.5
     ):
         super().__init__()
         # define backbone and position embedding module
@@ -144,6 +145,7 @@ class DINO(nn.Module):
         # the period for visualizing training samples
         self.input_format = input_format
         self.vis_period = vis_period
+        self.vis_thresh = vis_thresh
         if vis_period > 0:
             assert input_format is not None, "input_format is required for visualization!"
 
@@ -310,7 +312,6 @@ class DINO(nn.Module):
         from detectron2.utils.visualizer import Visualizer
 
         storage = get_event_storage()
-        max_vis_box = 20
 
         for input, results_per_image in zip(batched_inputs, results):
             img = input["image"]
@@ -320,7 +321,7 @@ class DINO(nn.Module):
             anno_img = v_gt.get_image()
             v_pred = Visualizer(img, None)
             v_pred = v_pred.overlay_instances(
-                boxes=results_per_image.pred_boxes[:max_vis_box].tensor.detach().cpu().numpy()
+                boxes=results_per_image.pred_boxes[results_per_image.scores >= self.vis_thresh].tensor.detach().cpu().numpy()
             )
             pred_img = v_pred.get_image()
             vis_img = np.concatenate((anno_img, pred_img), axis=1)
