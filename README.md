@@ -2,7 +2,7 @@
 
 ### Data Preperation:
     
-    [ ] Download code
+    [ ] Download code - uploading zip file for now
     [x] Processing and making COCO format datasets - single, flat directory per dataset (image file should contain no parents), make sure ids are unique (look into GLASS maybe)
     [x] ignore label for dontcares (at first step, filter out all ignores from data)
     [ ] Datasets:
@@ -14,14 +14,14 @@
       [ ] Asayar - annotations are at line level and only contain traffic (e.g., no licence plate) - removed
       [x] Hiertext with angle filtering
       [x] Arshab
-      [x] DDI-100 - original images + filtered backgrounds
+      [x] DDI-100 - original images + filtered backgrounds (no augs for now as stamps contain texts)
         [ ] Add blacklist images to config
         [ ] Maybe use gen_images and not origin_images, however make sure that:
           [ ] train test split is done in group mode - augmented versions of the image should be in the same group
           [ ] stamps usually contain texts - need to blur them
       [ ] IDL (amazon textract) - not needed at first
-    [ ] For all possible datasets (sizewize - create zip so the download will be easy)
-    [ ] Documentation 
+    [x] For all possible datasets (sizewize - create zip so the download will be easy)
+    [x] Documentation - in metadata of each coco json 
 
 ### Azure:
 
