@@ -14,6 +14,7 @@ import pyrallis
 from tqdm.contrib.concurrent import thread_map
 import shutil
 import cv2
+from detectron2.data.detection_utils import _apply_exif_orientation
 
 class ImageWithAnnots(NamedTuple):
     im: Image.Image
@@ -188,6 +189,13 @@ class CocoDatasetMaker(abc.ABC):
             save_name = f'{img_id}.png'
             
         im = img_with_annots.im
+        copy_original_image = img_with_annots.original_img_path is not None
+        if hasattr(im, 'getexif'):
+            fixed_im = _apply_exif_orientation(im)
+            if fixed_im != im:
+                warnings.warn(f"Changing image because its exif changes it: {save_name}")
+                im = Image.fromarray(np.array(im))
+                copy_original_image = False
             
         cur_img_dict = {
             "id": img_id,
@@ -228,14 +236,14 @@ class CocoDatasetMaker(abc.ABC):
         elif self.config.ignore_policy == IgnorePolicies.SKIP_IMAGE:
             relevant_indexes = [j for j, should_ignore in enumerate(ignore_mask) if not should_ignore]
             if img_with_annots.num_annots > 0 and any(ignore_mask):
-                warnings.warn(f"Skipping {save_name} since it has ignore annotations")
+                # warnings.warn(f"Skipping {save_name} since it has ignore annotations")
                 return None, {}, []
 
         else:
             raise ValueError(f'Unsupported ignore policy {self.config.ignore_policy}')
 
         if len(relevant_indexes) == 0 and self.config.skip_image_without_gt_annots:
-            warnings.warn(f"Skipping {save_name} since it has no gt annotations")
+            # warnings.warn(f"Skipping {save_name} since it has no gt annotations")
             return None, {}, []
 
         relevant_indexes = np.array(relevant_indexes).astype(int)
@@ -271,7 +279,7 @@ class CocoDatasetMaker(abc.ABC):
         img_save_dir = self.config.destination / f'{img_with_annots.subset}_images'
         img_save_dir.mkdir(exist_ok=True)
         img_full_save_path = img_save_dir / save_name
-        if img_with_annots.original_img_path is not None:
+        if img_with_annots.original_img_path is not None and copy_original_image:
             shutil.copy(src=img_with_annots.original_img_path, dst=img_full_save_path)
         else:
             im.convert('RGB').save(img_full_save_path)
