@@ -2,7 +2,8 @@ from detectron2.data.samplers import RepeatFactorTrainingSampler
 from typing import List, Union, Optional, Dict, Tuple
 import numpy as np
 import torch
-from loguru import logger
+# from loguru import logger
+import logging
 from detectron2.data.build import (filter_images_with_only_crowd_annotations, torchdata, 
                                    itertools, filter_images_with_few_keypoints,
                                    check_metadata_consistency, print_instances_class_histogram, 
@@ -44,6 +45,7 @@ def get_dataset_dicts_and_sampler(
             1. list[dict]: a list of dicts following the standard dataset dict format.
             2. Sampler for the dicts
     """
+    logger = logging.getLogger("detectron2")
     if isinstance(names, str):
         names = [names]
 
@@ -53,8 +55,11 @@ def get_dataset_dicts_and_sampler(
         if isinstance(weights, (int, float)):
             weights = [weights] * len(weights)
 
-        weights = np.array(weights).astype(float)
+        weights = np.array(weights).astype(float).flatten()
         assert (weights != 0).any(), "All weights are 0"
+        if len(weights) == 1:
+            weights = len(names) * weights.tolist()
+            weights = np.array(weights).astype(float)
         weights = weights / weights.sum()
 
         assert len(weights) == len(names), (weights, names)
@@ -111,6 +116,7 @@ def get_dataset_dicts_and_sampler(
             [[w] * len(ds) for w, ds in zip(weights, dataset_dicts)]))
         repeat_factors = np.array(repeat_factors).astype(float)
         repeat_factors = repeat_factors / repeat_factors.sum()
+        repeat_factors = len(concat_dataset) * repeat_factors
         sampler = RepeatFactorTrainingSampler(
             repeat_factors=torch.from_numpy(repeat_factors), seed=seed, shuffle=shuffle)
 
