@@ -80,6 +80,8 @@ class VisulizationEvaluator(DatasetEvaluator):
         pass
     
     def evaluate(self):
+        if comm.is_main_process():
+            return {'vis': 1}
         return {}
     
     def visualize_det_instances(self, predictions: Instances, img: np.ndarray) -> np.ndarray:

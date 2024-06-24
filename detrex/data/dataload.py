@@ -2,13 +2,12 @@ from detectron2.data.samplers import RepeatFactorTrainingSampler
 from typing import List, Union, Optional, Dict, Tuple
 import numpy as np
 import torch
-import logging
+from loguru import logger
 from detectron2.data.build import (filter_images_with_only_crowd_annotations, torchdata, 
                                    itertools, filter_images_with_few_keypoints,
                                    check_metadata_consistency, print_instances_class_histogram, 
                                    DatasetCatalog, load_proposals_into_dataset, MetadataCatalog, build_detection_train_loader)
 from detectron2.data.samplers import RepeatFactorTrainingSampler, TrainingSampler
-import logging
 
 
 def get_dataset_dicts_and_sampler(
@@ -102,7 +101,6 @@ def get_dataset_dicts_and_sampler(
     assert len(concat_dataset), "No valid data found in {}.".format(
         ",".join(names))
 
-    logger = logging.getLogger(__file__)
     if len(dataset_dicts) == 1:
         logger.info("Single dataset -> naive sampling")
         weights = np.array([1.])

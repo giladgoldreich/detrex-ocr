@@ -1,5 +1,6 @@
 from detrex.config import get_config
 from ..models.dino_r50 import model
+import os
 
 # get default config
 dataloader = get_config("common/data/pretrain.py").dataloader
@@ -9,7 +10,7 @@ train = get_config("common/train.py").train
 
 # modify training config
 train.init_checkpoint = "detectron2://ImageNetPretrained/torchvision/R-50.pkl"
-train.output_dir = "./output/ddi_100_dino_r50_4scale_30000_steps_noeval"
+train.output_dir = "./output/train_clean"
 
 # max training iterations
 train.max_iter = 30000
@@ -48,5 +49,4 @@ dataloader.train.num_workers = 16
 dataloader.train.total_batch_size = 16
 
 # dump the testing results into output_dir for visualization
-dataloader.evaluator.output_dir = train.output_dir
 dataloader.evaluator.max_dets_per_image = model.select_box_nums_for_evaluation

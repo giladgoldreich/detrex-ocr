@@ -12,13 +12,15 @@ few common configuration parameters currently defined in "configs/common/train.p
 To add more complicated training logic, you can easily add other configs
 in the config file and implement a new train_net.py to handle them.
 """
+from copy import deepcopy
 import logging
 import os
 import sys
 import time
 import torch
 from torch.nn.parallel import DataParallel, DistributedDataParallel
-
+from collections import OrderedDict
+from typing import Optional
 from detectron2.config import LazyConfig, instantiate
 from detectron2.engine import (
     SimpleTrainer,
@@ -146,6 +148,22 @@ class Trainer(SimpleTrainer):
             self.grad_scaler.load_state_dict(state_dict["grad_scaler"])
 
 
+def get_test_datasets_and_evaluators(cfg, outdir_suffix: Optional[str] = None):
+    names = cfg.dataloader.test.dataset.names
+    if isinstance(names, str):
+        names = [names]
+    
+    for ds_name in names:
+        cfg_copy = deepcopy(cfg)
+        cfg_copy.dataloader.test.dataset.names = ds_name
+        if 'evaluator' in cfg_copy.dataloader and 'output_dir' in cfg_copy.dataloader.evaluator:
+            outdir = os.path.join(cfg.train.output_dir, f'eval_{outdir_suffix}' if outdir_suffix else 'eval')
+            cfg_copy.dataloader.evaluator.output_dir = outdir
+        ds = instantiate(cfg_copy.dataloader.test)
+        evaluator = instantiate(cfg_copy.dataloader.evaluator)
+        yield ds_name, ds, evaluator
+
+
 def do_test(cfg, model, eval_only=False):
     logger = logging.getLogger("detectron2")
 
@@ -156,28 +174,42 @@ def do_test(cfg, model, eval_only=False):
         else:
             logger.info("Run evaluation without EMA.")
         if "evaluator" in cfg.dataloader:
-            ret = inference_on_dataset(
-                model, instantiate(cfg.dataloader.test), instantiate(cfg.dataloader.evaluator)
-            )
+            ret = OrderedDict()
+            for ds_name, ds, evaluator in get_test_datasets_and_evaluators(cfg):
+                logger.info(f"Running inference on {ds_name}")
+                cur_ret = inference_on_dataset(model, ds, evaluator)
+                if cur_ret:
+                    for key, val in cur_ret.items():
+                        ret[f'{ds_name}/{key}'] = val
             print_csv_format(ret)
         return ret
     
     logger.info("Run evaluation without EMA.")
     if "evaluator" in cfg.dataloader:
-        ret = inference_on_dataset(
-            model, instantiate(cfg.dataloader.test), instantiate(cfg.dataloader.evaluator)
-        )
+        ret = OrderedDict()
+        for ds_name, ds, evaluator in get_test_datasets_and_evaluators(cfg):
+            logger.info(f"Running inference on {ds_name}")
+            cur_ret = inference_on_dataset(model, ds, evaluator)
+            if cur_ret:
+                for key, val in cur_ret.items():
+                    ret[f'{ds_name}/{key}'] = val
         print_csv_format(ret)
 
         if cfg.train.model_ema.enabled:
             logger.info("Run evaluation with EMA.")
             with ema.apply_model_ema_and_restore(model):
                 if "evaluator" in cfg.dataloader:
-                    ema_ret = inference_on_dataset(
-                        model, instantiate(cfg.dataloader.test), instantiate(cfg.dataloader.evaluator)
-                    )
+                    ema_ret = OrderedDict()
+                    for ds_name, ds, evaluator in get_test_datasets_and_evaluators(cfg, outdir_suffix='ema'):
+                        logger.info(f"Running inference on {ds_name}")
+                        cur_ret = inference_on_dataset(model, ds, evaluator)
+                        if cur_ret:
+                            for key, val in cur_ret.items():
+                                ema_ret[f'{ds_name}/{key}'] = val
+        
                     print_csv_format(ema_ret)
-                    ret.update(ema_ret)
+                    for key, val in ema_ret.items():
+                        ret[f'{key}_ema'] = val
         return ret
 
 

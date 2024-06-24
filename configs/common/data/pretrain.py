@@ -1,4 +1,3 @@
-import os
 from omegaconf import OmegaConf
 import detectron2.data.transforms as T
 from detectron2.config import LazyCall as L
@@ -6,22 +5,23 @@ from detectron2.data import (
     build_detection_test_loader,
     get_detection_dataset_dicts,
 )
-from detectron2.evaluation import COCOEvaluator
 from detrex.data import DetrDatasetMapper, get_dataset_dicts_and_sampler, build_weighted_detection_train_loader
 from detrex.data.datasets.register_ocr_pretrain import register_pretrain
-
-_root = os.getenv("DETECTRON2_DATASETS",
-                  "./datasets/")
-register_pretrain(_root)
-
+from detrex.evaluation.multi_evaluator import create_evaluator
 
 dataloader = OmegaConf.create()
 
 
 dataloader.train = L(build_weighted_detection_train_loader)(
     dataset=L(get_dataset_dicts_and_sampler)(
-        names=["DDI_100_train", "Hiertext_train"],
-        weights=[0.3, 0.7]
+        names=["DDI_100_train",
+               "Arshab_7k_train",
+               'Hiertext_train',
+               'ic15_clean_train',
+               'ic17mlt_clean',
+               'ic19_mlt_clean',
+               'textocr_train'],
+        weights=[0.2]  # uniform
     ),
     mapper=L(DetrDatasetMapper)(
         augmentation=[
@@ -66,7 +66,9 @@ dataloader.train = L(build_weighted_detection_train_loader)(
 
 dataloader.test = L(build_detection_test_loader)(
     dataset=L(get_detection_dataset_dicts)(
-        names="DDI_100_test", filter_empty=False),
+        names=["DDI_100_test", 'Hiertext_validation',
+               'ic15_clean_test', 'ic17mlt_val'],
+        filter_empty=False),
     mapper=L(DetrDatasetMapper)(
         augmentation=[
             L(T.ResizeShortestEdge)(
@@ -77,12 +79,15 @@ dataloader.test = L(build_detection_test_loader)(
         augmentation_with_crop=None,
         is_train=False,
         mask_on=False,
-        image_format="${...train.mapper.image_format}",
+        img_format="RGB",
     ),
     num_workers=4,
 )
 
-dataloader.evaluator = L(COCOEvaluator)(
+dataloader.evaluator = L(create_evaluator)(
     dataset_name="${..test.dataset.names}",
-    max_dets_per_image=2000
+    max_dets_per_image=2000,
+    output_dir='./eval',
+    vis=True,
+    coco=False
 )

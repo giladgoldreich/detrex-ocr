@@ -1,6 +1,6 @@
 from detectron2.data.datasets import register_coco_instances
 import os
-import logging
+from loguru import logger
 
 PRETRAIN_NAME_TO_SPLITS = {
     'DDI_100': ['train', 'test'],
@@ -15,7 +15,6 @@ PRETRAIN_NAME_TO_SPLITS = {
 
 
 def register_pretrain(datasets_root: str):
-    logger = logging.getLogger("detectron2")
     for ds_name, ds_split in PRETRAIN_NAME_TO_SPLITS.items():
         for split in ds_split:
             json_annots_path = os.path.join(
@@ -37,3 +36,7 @@ def register_pretrain(datasets_root: str):
                                     metadata={},
                                     json_file=json_annots_path,
                                     image_root=image_paths)
+
+_root = os.getenv("DETECTRON2_DATASETS",
+                  "./datasets/")
+register_pretrain(_root)
