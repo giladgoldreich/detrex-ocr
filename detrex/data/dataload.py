@@ -112,10 +112,12 @@ def get_dataset_dicts_and_sampler(
         sampler = TrainingSampler(len(concat_dataset))
 
     elif weights is not None:
+        weights = np.array(weights).astype(float)
+        weights = weights / weights.sum()
         repeat_factors = list(itertools.chain.from_iterable(
-            [[w] * len(ds) for w, ds in zip(weights, dataset_dicts)]))
+            [[w / len(ds)] * len(ds) for w, ds in zip(weights, dataset_dicts)]))
         repeat_factors = np.array(repeat_factors).astype(float)
-        repeat_factors = repeat_factors / repeat_factors.sum()
+        # repeat_factors = repeat_factors / repeat_factors.sum()
         repeat_factors = len(concat_dataset) * repeat_factors
         sampler = RepeatFactorTrainingSampler(
             repeat_factors=torch.from_numpy(repeat_factors), seed=seed, shuffle=shuffle)
