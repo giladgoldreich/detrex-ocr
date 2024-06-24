@@ -6,7 +6,6 @@ from detectron2.data import (
     get_detection_dataset_dicts,
 )
 from detrex.data import DetrDatasetMapper, get_dataset_dicts_and_sampler, build_weighted_detection_train_loader
-from detrex.data.datasets.register_ocr_pretrain import register_pretrain
 from detrex.evaluation.multi_evaluator import create_evaluator
 
 dataloader = OmegaConf.create()
@@ -14,13 +13,15 @@ dataloader = OmegaConf.create()
 
 dataloader.train = L(build_weighted_detection_train_loader)(
     dataset=L(get_dataset_dicts_and_sampler)(
-        names=["DDI_100_train",
+        names=[
+               "DDI_100_train",
                "Arshab_7k_train",
                'Hiertext_train',
                'ic15_clean_train',
-               'ic17mlt_clean',
-               'ic19_mlt_clean',
-               'textocr_train'],
+               'ic17mlt_clean_train',
+               'ic19mlt_clean_train',
+               'textocr_train'
+               ],
         weights=[0.2]  # uniform
     ),
     mapper=L(DetrDatasetMapper)(
@@ -66,8 +67,12 @@ dataloader.train = L(build_weighted_detection_train_loader)(
 
 dataloader.test = L(build_detection_test_loader)(
     dataset=L(get_detection_dataset_dicts)(
-        names=["DDI_100_test", 'Hiertext_validation',
-               'ic15_clean_test', 'ic17mlt_val'],
+        names=[
+               "DDI_100_test", 
+               'Hiertext_validation',
+               'ic15_clean_test', 
+               'ic17mlt_clean_val'
+               ],
         filter_empty=False),
     mapper=L(DetrDatasetMapper)(
         augmentation=[
