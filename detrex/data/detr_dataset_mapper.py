@@ -86,6 +86,8 @@ class DetrDatasetMapper:
         dataset_dict = copy.deepcopy(dataset_dict)  # it will be modified by code below
         image = utils.read_image(dataset_dict["file_name"], format=self.img_format)
         utils.check_image_size(dataset_dict, image)
+        
+        # todo: add AugInput here
 
         if self.augmentation_with_crop is None:
             image, transforms = T.apply_transform_gens(self.augmentation, image)

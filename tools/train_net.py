@@ -180,7 +180,7 @@ def do_test(cfg, model, eval_only=False):
                 cur_ret = inference_on_dataset(model, ds, evaluator)
                 if cur_ret:
                     for key, val in cur_ret.items():
-                        ret[f'{ds_name}/{key}'] = val
+                        ret[f'{key}/{ds_name}'] = val
             print_csv_format(ret)
         return ret
     
@@ -192,7 +192,7 @@ def do_test(cfg, model, eval_only=False):
             cur_ret = inference_on_dataset(model, ds, evaluator)
             if cur_ret:
                 for key, val in cur_ret.items():
-                    ret[f'{ds_name}/{key}'] = val
+                    ret[f'{key}/{ds_name}'] = val
         print_csv_format(ret)
 
         if cfg.train.model_ema.enabled:
@@ -205,7 +205,7 @@ def do_test(cfg, model, eval_only=False):
                         cur_ret = inference_on_dataset(model, ds, evaluator)
                         if cur_ret:
                             for key, val in cur_ret.items():
-                                ema_ret[f'{ds_name}/{key}'] = val
+                                ema_ret[f'{key}/{ds_name}'] = val
         
                     print_csv_format(ema_ret)
                     for key, val in ema_ret.items():

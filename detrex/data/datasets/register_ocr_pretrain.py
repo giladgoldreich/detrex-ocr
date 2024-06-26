@@ -22,15 +22,15 @@ def register_pretrain(datasets_root: str):
             image_paths = os.path.join(
                 datasets_root, ds_name, f'{split}_images')
             if not os.path.exists(json_annots_path):
-                logger.warn(
-                    f'Could not find {ds_name}_{split} json path (expected {json_annots_path})')
+                # logger.warn(
+                #     f'Could not find {ds_name}_{split} json path (expected {json_annots_path})')
                 continue
             if not os.path.exists(image_paths):
-                logger.warn(
-                    f'Could not find {ds_name}_{split} image path (expected {image_paths})')
+                # logger.warn(
+                #     f'Could not find {ds_name}_{split} image path (expected {image_paths})')
                 continue
             
-            logger.info(f"Registering {ds_name}_{split}")
+            # logger.info(f"Registering {ds_name}_{split}")
 
             register_coco_instances(f'{ds_name}_{split}',
                                     metadata={},

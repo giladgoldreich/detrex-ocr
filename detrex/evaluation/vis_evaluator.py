@@ -68,11 +68,12 @@ class VisulizationEvaluator(DatasetEvaluator):
                 background_image = cv2.resize(background_image, (origin_image.shape[1], origin_image.shape[0]))
                 vis_image = np.where((background_image!= 0).any(axis=-1, keepdims=True), background_image, vis_image)
             
-            canvas = np.hstack([origin_image, vis_image])           
+            # canvas = np.hstack([origin_image, vis_image])
+            canvas = vis_image           
                 
             basename = os.path.basename(input_dict["file_name"])
             outpath = Path(self._output_dir) / basename
-            outpath = Path(outpath).with_suffix('.png')
+            outpath = Path(outpath).with_suffix('.jpg')
             cv2.imwrite(str(outpath), canvas[..., ::-1])
         
         

@@ -1,6 +1,6 @@
 from detrex.config import get_config
 from ..models.dino_r50 import model
-import os
+import copy
 
 # get default config
 dataloader = get_config("common/data/pretrain.py").dataloader
@@ -10,13 +10,19 @@ train = get_config("common/train.py").train
 
 # modify training config
 train.init_checkpoint = "detectron2://ImageNetPretrained/torchvision/R-50.pkl"
-train.output_dir = "./output/train_clean"
+dataloader.train.dataset.weights = [1.] # uniform weighting
+train.output_dir = "./output/train_bs16_clean_equal_weight"
+
+# todo - check this checkpointing module, may save memory?
+# model.backbone.use_checkpoint=True
+model.transformer.encoder.use_checkpoint=True
+model.transformer.decoder.use_checkpoint=True
 
 # max training iterations
-train.max_iter = 30000
-train.eval_period = 30000
+train.max_iter = 90000 # ~100 epochs on clean pretrain w/o textocr when bs=16 (|clean_ds|~14500 samples w/o textocr)
+train.eval_period = 5000
 train.log_period = 20
-train.checkpointer.period = 2500
+train.checkpointer.period = 5000
 train.seed = 42
 
 # gradient clipping for training
@@ -31,7 +37,7 @@ model.num_classes = 1
 model.num_queries = 3000
 model.dn_number = 300
 model.select_box_nums_for_evaluation = 2000
-model.vis_period = 20
+model.vis_period = 0 # takes too much memory in tensorboard
 
 
 # modify optimizer config
@@ -50,3 +56,28 @@ dataloader.train.total_batch_size = 16
 
 # dump the testing results into output_dir for visualization
 dataloader.evaluator.max_dets_per_image = model.select_box_nums_for_evaluation
+
+# better hyperparms from detrex repo
+# no frozen backbone get better results
+model.backbone.freeze_at = -1
+
+# use 2.0 for class weight
+model.criterion.weight_dict = {
+    "loss_class": 2.0,
+    "loss_bbox": 5.0,
+    "loss_giou": 2.0,
+    "loss_class_dn": 1,
+    "loss_bbox_dn": 5.0,
+    "loss_giou_dn": 2.0,
+}
+
+# set aux loss weight dict
+base_weight_dict = copy.deepcopy(model.criterion.weight_dict)
+if model.aux_loss:
+    weight_dict = model.criterion.weight_dict
+    aux_weight_dict = {}
+    aux_weight_dict.update({k + "_enc": v for k, v in base_weight_dict.items()})
+    for i in range(model.transformer.decoder.num_layers - 1):
+        aux_weight_dict.update({k + f"_{i}": v for k, v in base_weight_dict.items()})
+    weight_dict.update(aux_weight_dict)
+    model.criterion.weight_dict = weight_dict
