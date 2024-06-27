@@ -1,6 +1,7 @@
 from detrex.config import get_config
 from ..models.dino_r50 import model
 import copy
+import os
 
 # get default config
 dataloader = get_config("common/data/pretrain.py").dataloader
@@ -11,7 +12,9 @@ train = get_config("common/train.py").train
 # modify training config
 train.init_checkpoint = "detectron2://ImageNetPretrained/torchvision/R-50.pkl"
 dataloader.train.dataset.weights = [1.] # uniform weighting
-train.output_dir = "./output/train_bs16_clean_equal_weight"
+# train.output_dir = "./output/train_bs16_clean_equal_weight"
+train.output_dir = "./output/test_gilad"
+
 
 # todo - check this checkpointing module, may save memory?
 # model.backbone.use_checkpoint=True
@@ -56,6 +59,7 @@ dataloader.train.total_batch_size = 16
 
 # dump the testing results into output_dir for visualization
 dataloader.evaluator.max_dets_per_image = model.select_box_nums_for_evaluation
+dataloader.evaluator.output_dir = os.path.join(train.output_dir, 'eval')
 
 # better hyperparms from detrex repo
 # no frozen backbone get better results

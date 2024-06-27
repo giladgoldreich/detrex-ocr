@@ -72,8 +72,13 @@ class VisulizationEvaluator(DatasetEvaluator):
             canvas = vis_image           
                 
             basename = os.path.basename(input_dict["file_name"])
-            outpath = Path(self._output_dir) / basename
-            outpath = Path(outpath).with_suffix('.jpg')
+            dataset_name = input_dict.get('dataset_name', None)
+            outdir = Path(self._output_dir)
+            if dataset_name is not None:
+                outdir = outdir / dataset_name
+                PathManager.mkdirs(str(outdir))
+                
+            outpath = Path(outdir / basename).with_suffix('.jpg')
             cv2.imwrite(str(outpath), canvas[..., ::-1])
         
         
@@ -81,8 +86,6 @@ class VisulizationEvaluator(DatasetEvaluator):
         pass
     
     def evaluate(self):
-        if comm.is_main_process():
-            return {'vis': 1}
         return {}
     
     def visualize_det_instances(self, predictions: Instances, img: np.ndarray) -> np.ndarray:

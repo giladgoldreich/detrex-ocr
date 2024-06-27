@@ -174,14 +174,28 @@ def do_test(cfg, model, eval_only=False):
         else:
             logger.info("Run evaluation without EMA.")
         if "evaluator" in cfg.dataloader:
-            ret = OrderedDict()
-            for ds_name, ds, evaluator in get_test_datasets_and_evaluators(cfg):
-                logger.info(f"Running inference on {ds_name}")
-                cur_ret = inference_on_dataset(model, ds, evaluator)
-                if cur_ret:
-                    for key, val in cur_ret.items():
-                        ret[f'{key}/{ds_name}'] = val
+            ret = inference_on_dataset(
+                model, instantiate(cfg.dataloader.test), instantiate(cfg.dataloader.evaluator)
+            )
             print_csv_format(ret)
+        return ret
+    
+    logger.info("Run evaluation without EMA.")
+    if "evaluator" in cfg.dataloader:
+        ret = inference_on_dataset(
+            model, instantiate(cfg.dataloader.test), instantiate(cfg.dataloader.evaluator)
+        )
+        print_csv_format(ret)
+
+        if cfg.train.model_ema.enabled:
+            logger.info("Run evaluation with EMA.")
+            with ema.apply_model_ema_and_restore(model):
+                if "evaluator" in cfg.dataloader:
+                    ema_ret = inference_on_dataset(
+                        model, instantiate(cfg.dataloader.test), instantiate(cfg.dataloader.evaluator)
+                    )
+                    print_csv_format(ema_ret)
+                    ret.update(ema_ret)
         return ret
     
     logger.info("Run evaluation without EMA.")
