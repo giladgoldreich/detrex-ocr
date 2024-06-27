@@ -105,6 +105,7 @@ model = L(DINO)(
     pixel_mean=[123.675, 116.280, 103.530],
     pixel_std=[58.395, 57.120, 57.375],
     vis_period=0,
+    vis_thresh=0.4,
     input_format="RGB",
     device="cuda",
 )

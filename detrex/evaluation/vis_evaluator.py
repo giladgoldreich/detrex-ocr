@@ -12,6 +12,7 @@ import os
 import cv2
 from torchvision.transforms import functional as F
 import warnings
+from copy import deepcopy
 
 class VisulizationEvaluator(DatasetEvaluator):
     
@@ -53,21 +54,23 @@ class VisulizationEvaluator(DatasetEvaluator):
             vis_image = origin_image.copy()
             
                       
-            if 'instances' in input_dict:
-                input_instances = input_dict['instances'].to(self._cpu_device)
-                vis_image = self.visualize_input_instances(input_instances, vis_image)
+            input_instances = deepcopy(input_dict['instances'].to(self._cpu_device))
+            vis_image = self.visualize_input_instances(input_instances, vis_image)
             
             if 'instances' in output_dict:
-                # the instances in the input dictionary are in the original images coordinates. Therefore, one needs to normalize them and scale them.
-                # instead, I chose an easy fix - view in the original image coords, and then resize :)
-                detected_instances = output_dict['instances'].to(self._cpu_device)
+                # the instances in the output dictionary are in the original images coordinates. Therefore, one needs to normalize them and scale them.
+                detected_instances = deepcopy(output_dict['instances'].to(self._cpu_device))
+                scale = input_instances.image_size[0] / detected_instances.image_size[0]
+                detected_instances.pred_boxes.scale(scale, scale)
+                if detected_instances.has('pred_masks'):
+                    for mask in detected_instances.pred_masks:
+                        mask[0] = mask[0] * scale
+                if detected_instances.has('pred_keypoints'):
+                    raise RuntimeError('Cannot scale predicted keypoints')
+                
                 filtered_detected_instances = detected_instances[detected_instances.scores >= self._score_threshold]
-                background_image = np.zeros((input_dict['height'], input_dict['width'], 3))
-                                    
-                background_image = self.visualize_det_instances(filtered_detected_instances, background_image)
-                background_image = cv2.resize(background_image, (origin_image.shape[1], origin_image.shape[0]))
-                vis_image = np.where((background_image!= 0).any(axis=-1, keepdims=True), background_image, vis_image)
-            
+                vis_image = self.visualize_det_instances(filtered_detected_instances, vis_image)
+                                                
             # canvas = np.hstack([origin_image, vis_image])
             canvas = vis_image           
                 

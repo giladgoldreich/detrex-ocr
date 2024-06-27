@@ -59,7 +59,7 @@ dataloader.train.total_batch_size = 16
 
 # dump the testing results into output_dir for visualization
 dataloader.evaluator.max_dets_per_image = model.select_box_nums_for_evaluation
-dataloader.evaluator.output_dir = os.path.join(train.output_dir, 'eval')
+dataloader.evaluator.output_dir = train.output_dir
 
 # better hyperparms from detrex repo
 # no frozen backbone get better results

@@ -30,7 +30,7 @@ from detectron2.engine import (
     launch,
 )
 from detectron2.engine.defaults import create_ddp_model
-from detectron2.evaluation import inference_on_dataset, print_csv_format
+from detectron2.evaluation import inference_on_dataset
 from detectron2.utils import comm
 from detectron2.utils.file_io import PathManager
 from detectron2.utils.events import (
@@ -43,8 +43,27 @@ from detectron2.checkpoint import DetectionCheckpointer
 
 from detrex.utils import WandbWriter
 from detrex.modeling import ema
+from pprint import pprint, pformat
+from collections.abc import Mapping
+
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), os.path.pardir)))
+
+def format_floats(obj, precision):
+    if isinstance(obj, (int, float)):
+        return round(obj, precision + 1)
+    elif isinstance(obj, Mapping):
+        return {k: format_floats(v, precision) for k, v in obj.items()}
+    elif isinstance(obj, list) and not isinstance(obj, str):
+        return [format_floats(i, precision) for i in obj]
+    else:
+        return obj
+
+def print_hirrecial_csv_format(results):
+    logger = logging.getLogger("detectron2")
+    assert isinstance(results, Mapping) or not len(results), results
+    rounded_results = format_floats(results, precision=4)
+    logger.info(pformat(rounded_results))
 
 
 class Trainer(SimpleTrainer):
@@ -177,7 +196,7 @@ def do_test(cfg, model, eval_only=False):
             ret = inference_on_dataset(
                 model, instantiate(cfg.dataloader.test), instantiate(cfg.dataloader.evaluator)
             )
-            print_csv_format(ret)
+            print_hirrecial_csv_format(ret)
         return ret
     
     logger.info("Run evaluation without EMA.")
@@ -185,7 +204,7 @@ def do_test(cfg, model, eval_only=False):
         ret = inference_on_dataset(
             model, instantiate(cfg.dataloader.test), instantiate(cfg.dataloader.evaluator)
         )
-        print_csv_format(ret)
+        print_hirrecial_csv_format(ret)
 
         if cfg.train.model_ema.enabled:
             logger.info("Run evaluation with EMA.")
@@ -194,7 +213,7 @@ def do_test(cfg, model, eval_only=False):
                     ema_ret = inference_on_dataset(
                         model, instantiate(cfg.dataloader.test), instantiate(cfg.dataloader.evaluator)
                     )
-                    print_csv_format(ema_ret)
+                    print_hirrecial_csv_format(ema_ret)
                     ret.update(ema_ret)
         return ret
     
@@ -207,7 +226,7 @@ def do_test(cfg, model, eval_only=False):
             if cur_ret:
                 for key, val in cur_ret.items():
                     ret[f'{key}/{ds_name}'] = val
-        print_csv_format(ret)
+        print_hirrecial_csv_format(ret)
 
         if cfg.train.model_ema.enabled:
             logger.info("Run evaluation with EMA.")
@@ -221,7 +240,7 @@ def do_test(cfg, model, eval_only=False):
                             for key, val in cur_ret.items():
                                 ema_ret[f'{key}/{ds_name}'] = val
         
-                    print_csv_format(ema_ret)
+                    print_hirrecial_csv_format(ema_ret)
                     for key, val in ema_ret.items():
                         ret[f'{key}_ema'] = val
         return ret
