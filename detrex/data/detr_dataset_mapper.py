@@ -27,6 +27,8 @@ import torch
 
 from detectron2.data import detection_utils as utils
 from detectron2.data import transforms as T
+from detectron2.structures import Instances
+import cv2
 
 __all__ = ["DetrDatasetMapper"]
 
@@ -62,6 +64,7 @@ class DetrDatasetMapper:
         is_train=True,
         mask_on=False,
         img_format="RGB",
+        apply_ignore_masking: bool = True
     ):
         self.mask_on = mask_on
         self.augmentation = augmentation
@@ -74,6 +77,7 @@ class DetrDatasetMapper:
 
         self.img_format = img_format
         self.is_train = is_train
+        self.apply_ignore_masking = apply_ignore_masking
 
     def __call__(self, dataset_dict):
         """
@@ -83,29 +87,29 @@ class DetrDatasetMapper:
         Returns:
             dict: a format that builtin models in detectron2 accept
         """
-        dataset_dict = copy.deepcopy(dataset_dict)  # it will be modified by code below
-        image = utils.read_image(dataset_dict["file_name"], format=self.img_format)
+        dataset_dict = copy.deepcopy(
+            dataset_dict)  # it will be modified by code below
+        image = utils.read_image(
+            dataset_dict["file_name"], format=self.img_format)
         utils.check_image_size(dataset_dict, image)
-        
+
         # todo: add AugInput here
 
         if self.augmentation_with_crop is None:
-            image, transforms = T.apply_transform_gens(self.augmentation, image)
+            image, transforms = T.apply_transform_gens(
+                self.augmentation, image)
         else:
             if np.random.rand() > 0.5:
-                image, transforms = T.apply_transform_gens(self.augmentation, image)
+                image, transforms = T.apply_transform_gens(
+                    self.augmentation, image)
             else:
-                image, transforms = T.apply_transform_gens(self.augmentation_with_crop, image)
+                image, transforms = T.apply_transform_gens(
+                    self.augmentation_with_crop, image)
 
         image_shape = image.shape[:2]  # h, w
 
-        # Pytorch's dataloader is efficient on torch.Tensor due to shared-memory,
-        # but not efficient on large generic data structures due to the use of pickle & mp.Queue.
-        # Therefore it's important to use torch.Tensor.
-        dataset_dict["image"] = torch.as_tensor(np.ascontiguousarray(image.transpose(2, 0, 1)))
-
         # keeping annotations for visualizations
-        
+
         # if not self.is_train:
         #     # USER: Modify this if you want to keep them for some reason.
         #     dataset_dict.pop("annotations", None)
@@ -118,12 +122,52 @@ class DetrDatasetMapper:
                     anno.pop("segmentation", None)
                 anno.pop("keypoints", None)
 
-            # USER: Implement additional transformations if you have other types of data
-            annos = [
-                utils.transform_instance_annotations(obj, transforms, image_shape)
+            annos, ignore_mask = list(zip(*[
+                (utils.transform_instance_annotations(obj, transforms, image_shape),
+                 obj.get('iscrowd', 0) == 1 or obj.get('ignore', 0) == 1)
                 for obj in dataset_dict.pop("annotations")
-                if obj.get("iscrowd", 0) == 0
-            ]
+            ]))
+
+            ignore_mask = np.array(ignore_mask, dtype=bool)
+
             instances = utils.annotations_to_instances(annos, image_shape)
-            dataset_dict["instances"] = utils.filter_empty_instances(instances)
+            gt_instances = instances[~ignore_mask]
+            ignore_instances = instances[ignore_mask]
+
+            gt_instances = utils.filter_empty_instances(gt_instances)
+            ignore_instances = utils.filter_empty_instances(ignore_instances)
+
+            if len(ignore_instances) > 0 and self.apply_ignore_masking:
+                image = self.mask_ignores_in_image(
+                    image=image, ignore_instances=ignore_instances, gt_instances=gt_instances)
+
+            dataset_dict["instances"] = gt_instances
+            dataset_dict["ignore_instances"] = ignore_instances
+
+            # Pytorch's dataloader is efficient on torch.Tensor due to shared-memory,
+        # but not efficient on large generic data structures due to the use of pickle & mp.Queue.
+        # Therefore it's important to use torch.Tensor.
+        dataset_dict["image"] = torch.as_tensor(
+            np.ascontiguousarray(image.transpose(2, 0, 1)))
         return dataset_dict
+
+    @staticmethod
+    def mask_ignores_in_image(image: np.ndarray, ignore_instances: Instances, gt_instances: Instances) -> np.ndarray:
+        if len(ignore_instances) == 0:
+            return image.copy()
+        image_shape = image.shape[:2]  # h,w
+        img_ignore_mask = np.zeros(image_shape, dtype=np.uint8)
+        img_gt_mask = np.zeros(image_shape, dtype=np.uint8)
+        for b in gt_instances.gt_boxes.tensor.to(int):
+            img_gt_mask[b[1]:b[3], b[0]:b[2]] = 1
+        for b in ignore_instances.gt_boxes.tensor.to(int):
+            img_ignore_mask[b[1]:b[3], b[0]:b[2]] = 1
+
+        img_gt_mask = cv2.dilate(img_gt_mask, kernel=np.ones(
+            (5, 5), dtype=np.uint8), iterations=1)
+        background_mask = np.logical_and(img_ignore_mask.astype(bool),
+                                         ~(img_gt_mask.astype(bool)))
+
+        final_image = image.copy()
+        final_image[background_mask] = 0
+        return final_image
