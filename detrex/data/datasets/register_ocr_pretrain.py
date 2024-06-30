@@ -4,12 +4,11 @@ import os
 
 PRETRAIN_NAME_TO_SPLITS = {
     'DDI_100': ['train', 'test'],
-    'Arshab_7k': ['train'],
-    'Hiertext': ['train', 'validation'],
-    'ic15_clean': ['train', 'test'],
-    'ic17mlt_clean': ['train', 'val'],
-    'ic19mlt_clean': ['train'],
-    'textocr': ['train']
+    'Arshab_7k': ['train', 'test'],
+    'Hiertext_full': ['train', 'validation'],
+    'ic15_full': ['train', 'test'],
+    'ic17mlt_full': ['train', 'val'],
+    'ic19mlt_full': ['train'],
 
 }
 

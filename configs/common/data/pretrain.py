@@ -17,11 +17,10 @@ dataloader.train = L(build_weighted_detection_train_loader)(
         names=[
                "DDI_100_train",
                "Arshab_7k_train",
-               'Hiertext_train',
-               'ic15_clean_train',
-               'ic17mlt_clean_train',
-               'ic19mlt_clean_train',
-            #    'textocr_train'
+               'Hiertext_full_train',
+               'ic15_full_train',
+               'ic17mlt_full_train',
+               'ic19mlt_full_train',
                ],
         weights=[0.2]  # uniform
     ),
@@ -97,10 +96,11 @@ dataloader.train = L(build_weighted_detection_train_loader)(
 dataloader.test = L(build_detection_test_loader)(
     dataset=L(get_detection_dataset_dicts)(
         names=[
-               "DDI_100_test", 
-               'Hiertext_validation',
-               'ic15_clean_test', 
-               'ic17mlt_clean_val'
+               "DDI_100_test",
+               "Arshab_7k_test", 
+               'Hiertext_full_validation',
+               'ic15_full_test', 
+               'ic17mlt_full_val'
                ],
         filter_empty=False),
     mapper=L(DetrDatasetMapper)(

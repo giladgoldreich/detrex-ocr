@@ -13,7 +13,7 @@ from sklearn.model_selection import train_test_split
 import cv2
 import json
 from enum import Enum, auto
-from datasets.dataset_maker import DatasetMakingConfig, CocoDatasetMaker, ImageWithAnnots
+from datasets.dataset_maker import DatasetMakingConfig, CocoDatasetMaker, ImageWithAnnots, IgnorePolicies
 
 
 class HardAnnotPolicy(Enum):
@@ -24,7 +24,7 @@ class HardAnnotPolicy(Enum):
 
 @dataclass
 class HierTextCocoMakingConfig(DatasetMakingConfig):
-    dataset_name: ClassVar[str] = 'Hiertext'
+    dataset_name: ClassVar[str] = 'Hiertext_full'
     dataset_root: Path =Path('/nfs/private/gilad/ocr_detection/data/raw/hiertext')
     metadata: Dict[str, Any] = field(default_factory=lambda: {
         "url": "https://github.com/google-research-datasets/hiertext",
@@ -38,7 +38,7 @@ class HierTextCocoMakingConfig(DatasetMakingConfig):
     angle_policy: HardAnnotPolicy = HardAnnotPolicy.KEEP
     handwriting_policy: HardAnnotPolicy = HardAnnotPolicy.KEEP
     legible_policy: HardAnnotPolicy = HardAnnotPolicy.MARK_IGNORE
-    
+    ignore_policy: IgnorePolicies = IgnorePolicies.KEEP    
 
 @dataclass
 class HierTextCocoMaker(CocoDatasetMaker):

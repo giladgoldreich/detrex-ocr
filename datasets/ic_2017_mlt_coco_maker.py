@@ -24,7 +24,7 @@ class OtherLangugePolicy(Enum):
 
 @dataclass
 class IC17MLTCocoMakingConfig(DatasetMakingConfig):
-    dataset_name: ClassVar[str] = 'ic17mlt_clean'
+    dataset_name: ClassVar[str] = 'ic17mlt_full'
     dataset_root: Path =Path('/nfs/private/gilad/ocr_detection/data/raw/ICDAR2017_mlt')
     metadata: Dict[str, Any] = field(default_factory=lambda: {
         "url": "https://rrc.cvc.uab.es/?ch=4&com=introduction",
@@ -43,7 +43,7 @@ class IC17MLTCocoMakingConfig(DatasetMakingConfig):
         })
     gt_file_prefix: Optional[str] = 'gt'
     skip_image_without_lang_annots: bool = True
-    ignore_policy: IgnorePolicies = IgnorePolicies.SKIP_IMAGE    
+    ignore_policy: IgnorePolicies = IgnorePolicies.KEEP
 
 @dataclass
 class IC17MLTCocoMaker(CocoDatasetMaker):

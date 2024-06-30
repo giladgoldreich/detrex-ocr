@@ -18,7 +18,7 @@ from datasets.ic_2017_mlt_coco_maker import IC17MLTCocoMaker, IC17MLTCocoMakingC
 
 @dataclass
 class IC19MLTCocoMakingConfig(IC17MLTCocoMakingConfig):
-    dataset_name: ClassVar[str] = 'ic19mlt_clean'
+    dataset_name: ClassVar[str] = 'ic19mlt_full'
     dataset_root: Path =Path('/nfs/private/gilad/ocr_detection/data/raw/ICDAR2019_mlt')
     metadata: Dict[str, Any] = field(default_factory=lambda: {
         "url": "https://rrc.cvc.uab.es/?ch=15&com=introduction",
@@ -36,7 +36,7 @@ class IC19MLTCocoMakingConfig(IC17MLTCocoMakingConfig):
         })
     skip_image_without_lang_annots: bool = True
     gt_file_prefix: Optional[str] = None
-    ignore_policy: IgnorePolicies = IgnorePolicies.SKIP_IMAGE
+    ignore_policy: IgnorePolicies = IgnorePolicies.KEEP
     subset_name_to_max_images: Dict[str, int] = field(default_factory=lambda: {
         'train': 2000
     })
